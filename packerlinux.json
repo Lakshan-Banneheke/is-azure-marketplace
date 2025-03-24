@@ -1,0 +1,38 @@
+
+{
+  "builders": [{
+    "type": "azure-arm",
+
+    "client_id": "{{env `AZURE_CLIENT_ID`}}",
+    "client_secret": "{{env `AZURE_CLIENT_SECRET`}}",
+    "tenant_id": "{{env `AZURE_TENANT_ID`}}",
+    "subscription_id": "{{env `AZURE_SUBSCRIPTION_ID`}}",
+
+    "os_type": "Linux",
+    "image_publisher": "Canonical",
+    "image_offer": "UbuntuServer",
+    "image_sku": "24.04-LTS",
+    
+    "vm_size": "Standard_D4s_v3", 
+    "build_resource_group_name": "rg-wso2-identity-server",
+    "temp_compute_name": "vm-wso2-identity-server",
+    "private_virtual_network_with_public_ip": true,
+    "custom_data_file": "",
+    "polling_duration_timeout": "0h30m0s",
+
+    "shared_image_gallery_destination": {
+        "subscription": "{{env `AZURE_SUBSCRIPTION_ID`}}",
+        "resource_group": "{{env `SIG_GALLERY_RESOURCE_GROUP`}}",
+        "gallery_name": "{{env `SIG_GALLERY_NAME`}}",
+        "image_name": "{{env `SIG_IMAGE_NAME`}}",
+        "image_version": "{{env `SIG_IMAGE_VERSION`}}",
+        "replication_regions": ["{{env `LOCATION`}}"]
+    }
+  }],
+
+  "provisioners": [{
+    "type": "shell",
+    "script": "install-wso2-is.sh",
+    "execute_command": "chmod +x {{ .Path }}; {{ .Vars }} sudo -E sh '{{ .Path }}'"
+  }]
+}

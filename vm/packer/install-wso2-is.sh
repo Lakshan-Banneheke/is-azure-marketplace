@@ -1,8 +1,13 @@
 #!/bin/bash
 
-sudo apt-get update
+APP_USER="azureuser"
+EXTRACT_DIR="/home/$APP_USER/wso2is/"
 
+sudo apt-get update
 sudo apt-get upgrade -y
+sudo apt-get install unzip -y
+sudo apt-get install wget -y
+sudo apt install nginx -y
 
 # Install Java
 sudo NEEDRESTART_MODE=a apt install -y wget apt-transport-https
@@ -16,20 +21,10 @@ echo \"JAVA_HOME_17_X64=/usr/lib/jvm/temurin-17-jdk-amd64\" | sudo tee -a /etc/e
 export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64
 
 # Install WSO2 IS
-APP_USER="azureuser"
-EXTRACT_DIR="/home/$APP_USER/wso2is/"
-
-sudo apt-get install unzip -y
-sudo apt-get install wget -y
 sudo -u $APP_USER mkdir /home/$APP_USER/wso2is
 sudo -u $APP_USER wget -P /home/$APP_USER/wso2is/ https://github.com/wso2/product-is/releases/download/v7.1.0/wso2is-7.1.0.zip
-
 sudo chown -R "$APP_USER:$APP_USER" "wso2is"
-
 sudo -u $APP_USER unzip -q /home/$APP_USER/wso2is/wso2is-7.1.0.zip -d $EXTRACT_DIR
-
-# Install Nginx
-sudo apt install nginx -y
 
 # Clone the artifact repo and copy required files
 git clone https://github.com/Lakshan-Banneheke/is-azure-marketplace.git
@@ -52,5 +47,3 @@ sudo service nginx reload
 # Start the Identity Server
 echo "Starting the WSO2 Identity Server"
 sudo -u $APP_USER bash -c "export JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64 && /home/$APP_USER/wso2is/wso2is-7.1.0/bin/wso2server.sh start"
-
-
