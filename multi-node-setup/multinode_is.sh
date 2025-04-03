@@ -11,7 +11,6 @@ sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install unzip -y
 sudo apt-get install wget -y
-sudo apt-get install nginx -y
 
 # Install Java
 sudo NEEDRESTART_MODE=a apt install -y wget apt-transport-https
@@ -22,6 +21,7 @@ sudo NEEDRESTART_MODE=a apt-get update
 sudo NEEDRESTART_MODE=a apt install -y temurin-17-jdk=17.0.14.0.0+7-1
 echo \"JAVA_HOME=/usr/lib/jvm/temurin-17-jdk-amd64\" | sudo tee -a /etc/environment
 echo \"JAVA_HOME_17_X64=/usr/lib/jvm/temurin-17-jdk-amd64\" | sudo tee -a /etc/environment
+source /etc/environment
 
 # Install WSO2 IS
 echo "### Installing WSO2 Identity Server ###"
@@ -42,7 +42,6 @@ echo "### Download and extraction completed ###"
 # Clone the artifact repo and copy required files
 git clone https://github.com/Lakshan-Banneheke/is-azure-marketplace.git
 cd is-azure-marketplace/vm
-sudo cp nginx/is.https.conf /etc/nginx/conf.d/is.https.conf
 sudo cp is/deployment.toml $USER_HOME/wso2is/wso2is-7.1.0/repository/conf/deployment.toml
 
 # Generate the certificates and copy them to the /etc/ssl/localcerts/ folder
@@ -53,9 +52,6 @@ sudo openssl req -x509 -newkey rsa:4096 -keyout /etc/ssl/localcerts/is_public.ke
 sudo -u $USER keytool -genkey -alias wso2carbon -keyalg RSA -keysize 2048 -keystore $USER_HOME/wso2is/wso2is-7.1.0/repository/resources/security/keystore.p12 -storetype PKCS12 -dname "CN=is.wso2, OU=IAM,O=WSO2,L=SantaClara,S=California,C=US" -storepass wso2carbon -keypass wso2carbon -ext SAN=dns:localhost
 sudo -u $USER keytool -export -alias wso2carbon -keystore $USER_HOME/wso2is/wso2is-7.1.0/repository/resources/security/keystore.p12 -storetype PKCS12 -file $USER_HOME/wso2is/wso2is-7.1.0/repository/resources/security/pkn.pem -storepass wso2carbon -noprompt
 sudo -u $USER keytool -import -alias newcert -file $USER_HOME/wso2is/wso2is-7.1.0/repository/resources/security/pkn.pem -keystore $USER_HOME/wso2is/wso2is-7.1.0/repository/resources/security/client-truststore.p12 -storetype PKCS12 -storepass wso2carbon -noprompt
-
-# Reload Nginx
-sudo service nginx reload
 
 # Start the Identity Server
 echo "Starting the WSO2 Identity Server"
@@ -80,3 +76,10 @@ while ! is_identity_server_up; do
 done
 
 echo "WSO2 Identity Server is up and running."
+
+
+#### Install sqlcmd
+curl https://packages.microsoft.com/keys/microsoft.asc | sudo tee /etc/apt/trusted.gpg.d/microsoft.asc
+sudo add-apt-repository "$(wget -qO- https://packages.microsoft.com/config/ubuntu/20.04/prod.list)" -y
+sudo apt-get update -y
+sudo apt-get install sqlcmd -y

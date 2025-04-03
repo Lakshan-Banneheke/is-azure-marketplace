@@ -1,0 +1,179 @@
+{
+    "$schema": "https://schema.management.azure.com/schemas/2019-04-01/deploymentTemplate.json#",
+    "contentVersion": "1.0.0.0",
+    "parameters": {
+        "location": {
+            "type": "string",
+            "defaultValue": "[resourceGroup().location]",
+            "metadata": {
+                "description": "Specify the location for the Azure resources"
+            }
+        }        
+    },
+    "variables": {
+        "artifacts": {
+            "vnet": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/vnet.json')]",
+            "azureSqlServer": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/azureSqlServer.json')]",
+            "vms": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/vms.json')]",
+            "loadBalancer": "[uri(deployment().properties.templateLink.uri, 'nestedtemplates/loadBalancer.json')]"
+        },
+        "product": "wso2-identity-server",
+        "vnetName": "[concat('vnet-', variables('product'))]",
+        "snetVMNodesName": "snet-vm-nodes",
+        "snetPrivateEndpointName": "snet-private-endpoint",
+        "vnetAddressSpace": "10.3.0.0/16",
+        "snetDefaultAddressSpace":  "10.3.0.0/24",
+        "snetVMNodesAddressSpace": "10.3.1.0/24",
+        "snetPrivateEndpointNameAddressSpace": "10.3.2.0/24",
+        "privateIPNode1": "10.3.1.4",
+        "privateIPNode2": "10.3.1.5",
+        "loadBalancerName": "[concat('lb-', variables('product'))]",
+        "backendAddressPoolName": "[concat('backend-', variables('product'))]",
+        "sqlServerName": "[concat('sql-', variables('product'))]",
+        "sqlServerAdminUsername": "dbserveradmin",
+        "sqlServerAdminPassword": "",
+        "vmNameNode1": "[concat('vm-', variables('product'), '-node1')]",
+        "vmNameNode2": "[concat('vm-', variables('product'), '-node2')]",
+    },
+    "resources": [
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2023-07-01",
+            "name": "vnet",
+            "properties": {
+                "mode":"Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[variables('artifacts').vnet]"
+                },
+                "parameters": {
+                    "vnetName": {
+                        "value": "[variables('vnetName')]"
+                    },
+                    "vnetAddressSpace": {
+                        "value": "[variables('vnetAddressSpace')]"
+                    },
+                    "snetDefaultAddressSpace": {
+                        "value": "[variables('snetDefaultAddressSpace')]"
+                    },                    
+                    "snetVMNodesName": {
+                        "value": "[variables('snetVMNodesName')]"
+                    },
+                    "snetVMNodesAddressSpace": {
+                        "value": "[variables('snetVMNodesAddressSpace')]"
+                    },
+                    "snetPrivateEndpointName": {
+                        "value": "[variables('snetPrivateEndpointName')]"
+                    },
+                    "snetPrivateEndpointNameAddressSpace": {
+                        "value": "[variables('snetPrivateEndpointNameAddressSpace')]"
+                    }
+                }
+            }
+        },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2023-07-01",
+            "name": "loadBalancer",
+            "properties": {
+                "mode":"Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[variables('artifacts').loadBalancer]"
+                },
+                "parameters": {
+                    "product": {
+                        "value": "[variables('product')]"
+                    },
+                    "loadBalancerName": {
+                        "value": "[variables('loadBalancerName')]"
+                    },
+                    "backendAddressPoolName": {
+                        "value": "[variables('backendAddressPoolName')]"
+                    }
+                }
+            }
+        },
+        // {
+        //     "type": "Microsoft.Resources/deployments",
+        //     "apiVersion": "2023-07-01",
+        //     "name": "azureSqlServer",
+        //     "dependsOn": [
+        //         "vnet"
+        //     ],
+        //     "properties": {
+        //         "mode":"Incremental",
+        //         "templateLink": {
+        //             "contentVersion": "1.0.0.0",
+        //             "uri": "[variables('artifacts').azureSqlServer]"
+        //         },
+        //         "parameters": {
+        //             "sqlServerName": {
+        //                 "value": "[variables('sqlServerName')]"
+        //             },
+        //             "sqlServerAdminUsername": {
+        //                 "value": "[variables('sqlServerAdminUsername')]"
+        //             },
+        //             "sqlServerAdminPassword": {
+        //                 "value": "[variables('sqlServerAdminPassword')]"
+        //             },
+        //             "vnetName": {
+        //                 "value": "[variables('vnetName')]"
+        //             },
+        //             "snetPrivateEndpointName": {
+        //                 "value": "[variables('snetPrivateEndpointName')]"
+        //             }
+        //         }
+        //     }
+        // },
+        {
+            "type": "Microsoft.Resources/deployments",
+            "apiVersion": "2023-07-01",
+            "name": "vms",
+            "dependsOn": [
+                "vnet",
+                "loadBalancer"
+                // "azureSqlServer"
+            ],
+            "properties": {
+                "mode":"Incremental",
+                "templateLink": {
+                    "contentVersion": "1.0.0.0",
+                    "uri": "[variables('artifacts').vms]"
+                },
+                "parameters": {
+                    "vmNameNode1": {
+                        "value": "[variables('vmNameNode1')]"
+                    },
+                    "vmNameNode2": {
+                        "value": "[variables('vmNameNode2')]"
+                    },
+                    "adminUsername": {
+                        "value": "azureuser"
+                    },
+                    "adminPassword": {
+                        "value": "A1b@secure"
+                    },
+                    "vnetName": {
+                        "value": "[variables('vnetName')]"
+                    },
+                    "snetVMNodesName": {
+                        "value": "[variables('snetVMNodesName')]"
+                    },
+                    "privateIPNode1": {
+                         "value": "[variables('privateIPNode1')]"
+                    },
+                    "privateIPNode2": {
+                         "value": "[variables('privateIPNode2')]"
+                    },
+                    "loadBalancerName": {
+                        "value": "[variables('loadBalancerName')]"
+                    },
+                    "backendAddressPoolName": {
+                        "value": "[variables('backendAddressPoolName')]"
+                    }
+                }
+            }
+        }
+    ]
+}
